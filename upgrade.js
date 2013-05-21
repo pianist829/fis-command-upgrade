@@ -141,7 +141,7 @@ exports.register = function(commander) {
         .option('--ld <smarty left delimiter>', 'smarty left delimiter', String, '{%')
         .option('--rd <smarty right delimiter>', 'smarty right delimiter', String, '%}')
         .action(function(options) {
-            namesapce = options.namespace;
+            namespace = options.namespace;
             ld = options.ld;
             rd = options.rd;
             var root = fis.util.realpath(process.cwd());
