@@ -1,0 +1,21 @@
+{
+  "name": "fis-command-upgrade",
+  "version": "0.0.1",
+  "description": "This tool can help you upgrade your project from FIS-1.x to FIS-2.x.",
+  "main": "upgrade.js",
+  "scripts": {
+    "test": "mocha test/ut --recursive"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/xiangshouding/fis-command-upgrade.git"
+  },
+  "keywords": [
+    "fis",
+    "upgrade"
+  ],
+  "author": "xiangshouding",
+  "license": "MIT",
+  "readmeFilename": "README.md",
+  "gitHead": "55ba08280eec9d836c587457476430e5d5176578"
+}
