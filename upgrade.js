@@ -9,6 +9,7 @@ exports.name = 'upgrade';
 exports.desc = 'Upgrade 1.0 - 2.0';
 exports.register = function(commander) {
     var namespace, ld, rd;
+
     function updateLibPath(content) {
         var libs = [
             'tangram',
@@ -71,7 +72,7 @@ exports.register = function(commander) {
         }
 
         function parseUse(content) {
-            var reg = /F.use\s*\(\s*("(?:[^\\"]|\\[\s\S])+"|'(?:[^\\']|\\[\s\S])+'|(?:\[[^\[\]]+?\]))\s*/g;
+            var reg = /(?:\/\*[^*]*\*+(?:[^\/*][^*]*\*+)*\/)|(?:\/\/[^\n\r\f]*)|F.use\s*\(\s*("(?:[^\\"]|\\[\s\S])+"|'(?:[^\\']|\\[\s\S])+'|(?:\[[^\[\]]+?\]))\s*/g;
             return content.replace(reg, function (m , value) {
                 if (value) {
                     var hasBrackets = false;
