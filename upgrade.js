@@ -110,10 +110,10 @@ exports.register = function(commander) {
         }
         var l_ld = pregQuote(ld);
         var l_rd = pregQuote(rd);
-        var reg = new RegExp('(?:'+l_ld+'\\s*\\bwidget([\\s\\S]*?)'+l_rd+'|'+l_ld+'\\s*\\/widget\\s*'+l_rd+')', 'g');
+        var reg = new RegExp('(?:'+l_ld+'\\s*\\bwidget\\b([\\s\\S]*?)'+l_rd+'|'+l_ld+'\\s*\\/widget\\s*'+l_rd+')', 'g');
         content = content.replace(reg, function(m, value) {
             if (value) {
-                var nameReg = /name\s*=\s*("(?:[^\\"]|\\[\s\S])+"|'(?:[^\\']|\\[\s\S])+')\s*/;
+                var nameReg = /\bname\s*=\s*("(?:[^\\"]|\\[\s\S])+"|'(?:[^\\']|\\[\s\S])+')\s*/;
                 if (!nameReg.test(value)) {
                     m = '';
                 } else {
