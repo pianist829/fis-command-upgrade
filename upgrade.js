@@ -5,158 +5,84 @@
 
 'use strict';
 
+var fs = require('fs'),
+    pth = require('path'),
+    xmlreader = require('xmlreader'),
+    js = require('./lib/jsUpgrade.js'),
+    css = require('./lib/cssUpgrade.js'),
+    tpl = require('./lib/tplUpgrade.js'),
+    _exists = fs.existsSync || pth.existsSync;
+
 exports.name = 'upgrade';
 exports.desc = 'Upgrade 1.0 - 2.0';
 exports.register = function(commander) {
-    var namespace, ld, rd;
-
-    function updateLibPath(content) {
-        var libs = [
-            'tangram',
-            'fis',
-            'magic',
-            'gmu',
-        ];
-
-        function inArray (needle, haystack, argStrict) {
-            // http://kevin.vanzonneveld.net
-            var key = '',
-                strict = !! argStrict;
-
-            if (strict) {
-                for (key in haystack) {
-                    if (haystack[key] === needle) {
-                        return true;
-                    }
-                }
-            } else {
-                for (key in haystack) {
-                    if (haystack[key] == needle) {
-                        return true;
-                    }
-                }
-            }
-
-            return false;
-        }
-
-        function getPathId(v) {
-            if (!/\.js$/.test(v) && v.indexOf(':') != -1) {
-                var p = v.indexOf(':');
-                var prefix = v.substr(0, p);
-                var subpath = v.substr(p + 1);
-                var comp = subpath;
-                if (inArray(prefix, libs)) {
-                    p = subpath.lastIndexOf('/');
-                    if (p !== -1) {
-                        comp = subpath.substr(p + 1);
-                    }
-                    v = 'common:static/common/lib/' + prefix + '/' + subpath + '/' + comp + '.js';
-                }
-            }
-            return v;
-        }
-
-        function parseRequire(content) {
-            var reg = /\brequire\s*\(\s*("(?:[^\\"]|\\[\s\S])+"|'(?:[^\\']|\\[\s\S])+')\s*\)/g;
-            content = content.replace(reg, function(m, value){
-                if(value){
-                    var info = fis.util.stringQuote(value);
-                    value = info.rest.trim();
-                    value = getPathId(value);
-                    m = 'require(' + info.quote + value + info.quote + ')';
-                }
-                return m;
-            });
-            return content;
-        }
-
-        function parseUse(content) {
-            var reg = /(?:\/\*[^*]*\*+(?:[^\/*][^*]*\*+)*\/)|(?:\/\/[^\n\r\f]*)|F.use\s*\(\s*("(?:[^\\"]|\\[\s\S])+"|'(?:[^\\']|\\[\s\S])+'|(?:\[[^\[\]]+?\]))\s*/g;
-            return content.replace(reg, function (m , value) {
-                if (value) {
-                    var hasBrackets = false;
-                    var values = [];
-                    value = value.trim().replace(/(^\[|\]$)/g, function(m, v) {
-                        if (v) {
-                            hasBrackets = true;
-                        }
-                        return '';
-                    });
-                    values = value.split(/\s*,\s*/);
-                    values = values.map(function(v) {
-                        var info = fis.util.stringQuote(v);
-                        v = info.rest.trim();
-                        v = getPathId(v);
-                        return info.quote + v + info.quote;
-                    });
-                    if (hasBrackets) {
-                        m = 'F.use([' + values.join(', ') + ']';
-                    } else {
-                        m = 'F.use(' + values.join(', ');
-                    }
-                }
-                return m;
-            });
-        }
-        content = parseRequire(content);
-        content = parseUse(content);
-        return content;
-    }
-
-    function updateWidgetPath(content) {
-        function pregQuote (str, delimiter) {
-            // http://kevin.vanzonneveld.net
-            return (str + '').replace(new RegExp('[.\\\\+*?\\[\\^\\]$(){}=!<>|:\\' + (delimiter || '') + '-]', 'g'), '\\$&');
-        }
-        var l_ld = pregQuote(ld);
-        var l_rd = pregQuote(rd);
-        var reg = new RegExp('(?:'+l_ld+'\\s*\\bwidget\\b([\\s\\S]*?)'+l_rd+'|'+l_ld+'\\s*\\/widget\\s*'+l_rd+')', 'g');
-        content = content.replace(reg, function(m, value) {
-            if (value) {
-                var nameReg = /\bname\s*=\s*("(?:[^\\"]|\\[\s\S])+"|'(?:[^\\']|\\[\s\S])+')\s*/;
-                if (!nameReg.test(value)) {
-                    m = '';
-                } else {
-                    value = value.replace(nameReg, function (m1, v) {
-                        if (v && v.indexOf(':') === -1) {
-                            var info = fis.util.stringQuote(v);
-                            v = info.rest.trim();
-                            v = namespace+':'+v;
-                            m1 = 'name=' + info.quote + v + info.quote + ' ';
-                        }
-                        return m1;
-                    });
-                    m = ld + 'widget '  + value + rd;
-                }
-            } else {
-                m = '';
-            }
-            return m;
-        });
-        return content;
-    }
+    var namespace, ld, rd,
+        model = 0,
+        widgetInline = false;
 
     commander
         .option('--namespace <namespace>', 'namespace', String, 'common')
         .option('--ld <smarty left delimiter>', 'smarty left delimiter', String, '{%')
         .option('--rd <smarty right delimiter>', 'smarty right delimiter', String, '%}')
+        .option('--model <Upgrade model>', 'Upgrade model', String, '0')
         .action(function(options) {
-            namespace = options.namespace;
+//            namespace = options.namespace;
+            model = options.model;
             ld = options.ld;
             rd = options.rd;
             var root = fis.util.realpath(process.cwd());
-            fis.util.find(root, /.*\.(tpl|js|html)/).forEach(function(filepath) {
+            //判断是不是一个正规模块
+            var xmlpath = root + '/config/fis-config.xml';
+            if(_exists(xmlpath)){
+                xmlreader.read(fis.util.read(xmlpath), function(errors, res){
+                    if(null !== errors ){
+                        console.log(errors)
+                        return;
+                    }
+                    if(res.project.attributes()['modulename']){
+                        namespace = res.project.attributes().modulename;
+                    }else{
+                        console.log('There has no modulename!');
+                        return;
+                    }
+                    if(res.project['smarty']){
+                        if(res.project.smarty.attributes()['left_delimiter']){
+                            ld = res.project.smarty.attributes().left_delimiter;
+                        }
+                        if(res.project.smarty.attributes()['right_delimiter']){
+                            rd = res.project.smarty.attributes().right_delimiter;
+                        }
+                    }
+                    if(res.project['setting']){
+                        if(res.project['setting']['WidgetInlineSyntax']){
+                            if(res.project['setting']['WidgetInlineSyntax'].attributes()['enable']){
+                                var v = res.project['setting']['WidgetInlineSyntax'].attributes()['enable'];
+                                widgetInline = (v == 'true' || v == '1');
+                            }
+                        }
+                    }
+                })
+            }else{
+                console.log('No configuration file, Please check the catalog is correct!');
+            }
+            fis.util.find(root, /.*\.(tpl|js|html|css)$/).forEach(function(filepath) {
                 var content = fis.util.read(filepath);
-                if (/\.js$/.test(filepath)) {
-                    content = updateLibPath(content);
+                content = js.update(content, namespace);
+                filepath = filepath.replace(/[\/\\]+/g, '/');
+                content = css.update(content, namespace, filepath, root);
+                if(/\.tpl$/.test(filepath)){
+                    content = tpl.update(content, namespace, ld, rd, filepath, root, widgetInline);
                 }
-
-                if (/\.(tpl|html)$/.test(filepath)) {
-                    content = updateLibPath(content);
-                    content = updateWidgetPath(content);
+                if(model == 1){
+                    filepath = root + '/' + namespace + '_2' +filepath.replace(root, '');
                 }
                 fis.util.write(filepath, content);
             });
+            var config = 'fis.config.require(\'pc\');\n'
+                       + 'fis.config.merge({\n'
+                       + '      namespace : \'' + namespace +'\',\n'
+                       + '});';
+            var configPath = root + '/fis-conf.js';
+            fis.util.write(configPath, config);
         });
 };

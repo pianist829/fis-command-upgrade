@@ -14,7 +14,10 @@
     "fis",
     "upgrade"
   ],
-  "author": "xiangshouding",
+  "dependencies": {
+      "xmlreader": "~0.2.3"
+  },
+  "author": "fis",
   "license": "MIT",
   "readmeFilename": "README.md",
   "gitHead": "55ba08280eec9d836c587457476430e5d5176578"
