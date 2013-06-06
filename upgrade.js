@@ -85,7 +85,7 @@ exports.register = function(commander) {
                     widget.push(filepath);
                 }
                 if(/\.css$/.test(filepath) && util.detMarco(content)){
-                    fs.rename(filepath, filepath.replace(/\.css/, '.less'));
+                    fs.renameSync(filepath, filepath.replace(/\.css/, '.less'));
                     macro.push(filepath);
                 }
             });
