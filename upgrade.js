@@ -89,7 +89,8 @@ exports.register = function(commander) {
                     macro.push(filepath);
                 }
             });
-            var config = 'fis.config.merge({\n'
+            var config = 'fis.config.require(\'pc\');\n'
+                       + 'fis.config.merge({\n'
                        + '      namespace : \'' + namespace +'\',\n'
                        + '});';
             var configPath = root + '/fis-conf.js';
