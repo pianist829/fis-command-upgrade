@@ -68,9 +68,10 @@ exports.register = function(commander) {
             }
             var macro = new Array();
             var widget = new Array();
+            var jsContext = new Array();
             fis.util.find(root, /.*\.(tpl|js|html|css)$/).forEach(function(filepath) {
                 var content = fis.util.read(filepath);
-                content = js.update(content, namespace);
+                content = js.update(content, namespace,filepath, root);
                 filepath = filepath.replace(/[\/\\]+/g, '/');
                 content = css.update(content, namespace, filepath, root);
                 if(/\.tpl$/.test(filepath)){
@@ -88,18 +89,22 @@ exports.register = function(commander) {
                     fs.renameSync(filepath, filepath.replace(/\.css/, '.less'));
                     macro.push(filepath);
                 }
+                if(util.detContext(content)){
+                    jsContext.push(filepath);
+                }
             });
-            var config = 'fis.config.require(\'pc\');\n'
-                       + 'fis.config.merge({\n'
-                       + '      namespace : \'' + namespace +'\',\n'
-                       + '});';
+            var config = 'fis.config.merge({\n'
+                + '      namespace : \'' + namespace +'\',\n'
+                + '});';
             var configPath = root + '/fis-conf.js';
             fis.util.write(configPath, config);
-            fis.util.write(root + '/detect.html', createHTML(macro, widget));
+            if(macro.length >0 && widget.length > 0){
+                fis.util.write(root + '/detect.html', createHTML(macro, widget,jsContext));
+            }
         });
 };
 
-function createHTML(macro, widget){
+function createHTML(macro, widget, jsContext){
     var html = '<!DOCTYPE html>'
         + '<html>'
         + '  <head>'
@@ -113,22 +118,44 @@ function createHTML(macro, widget){
         + '     </style>'
         + '   </head>';
     var tr = '';
-    for(var i = 0; i < macro.length; i++){
-        tr += '<tr  class="error">'
-            + '  <td style="max-width:500px;word-break:break-all;"> ' + macro[i]+ '</td>'
-            + '  <td>此文件中使用了Macro，请替换为Less语法,文件后缀已修改为less,同时请修改跨模块引用此文件的引用方式.</td>'
-            + '</tr>'
+
+    if(jsContext.length > 0){
+        for(var i = 0; i < jsContext.length; i++){
+            tr += '<tr  class="error">';
+            if(i == 0){
+                tr += '<td style="text-align:center;margin-left:auto;vertical-align: middle;" rowspan="' + macro.length+ '">此文件中使用了F.context，2.0不支持此功能，请替换为其他数据中心.</td>'
+            }
+            tr += '  <td style="max-width:500px;word-break:break-all;"> ' + jsContext[i]+ '</td>'
+                + '</tr>';
+        }
     }
-    for(var i = 0; i < widget.length; i++){
-        tr += '<tr  class="error">'
-            + '  <td style="max-width:500px;word-break:break-all;"> ' + widget[i]+ '</td>'
-            + '  <td >此文件中使用了widget继承，请替换此功能.</td>'
-            + '</tr>'
+
+    if(macro.length > 0){
+        for(var i = 0; i < macro.length; i++){
+            tr += '<tr  class="error">';
+            if(i == 0){
+                tr += '<td style="text-align:center;margin-left:auto;vertical-align: middle;" rowspan="' + macro.length+ '">此文件中使用了Macro，请替换为Less语法,文件后缀已修改为less,同时请修改跨模块引用此文件的引用方式.</td>'
+            }
+            tr += '  <td style="max-width:500px;word-break:break-all;"> ' + macro[i]+ '</td>'
+                + '</tr>';
+        }
     }
+
+    if(widget.length > 0){
+        for(var i = 0; i < widget.length; i++){
+            tr += '<tr  class="error">';
+            if(i == 0){
+                tr += '<td style="text-align:center;margin-left:auto;vertical-align: middle;" rowspan="' + macro.length+ '">此文件中使用了widget继承，请替换此功能.</td>'
+            }
+            tr += '  <td style="max-width:500px;word-break:break-all;"> ' + widget[i]+ '</td>'
+                + '</tr>';
+        }
+    }
+
     html += '<body>'
         +      '<div class="container">'
         +          '<table class="table table-hover"><tbody>'
-        +               '<tr class="table-header"><th>文件路径</th><th>检测功能</th></tr>'
+        +               '<tr class="table-header"><th>检测功能</th><th>文件路径</th></tr>'
         +                tr
         +          '</tbody></table>'
         +      '</div>'
