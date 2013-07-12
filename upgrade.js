@@ -34,6 +34,9 @@ exports.register = function(commander) {
             var root = fis.util.realpath(process.cwd());
             //判断是不是一个正规模块
             var xmlpath = root + '/config/fis-config.xml';
+            var rootSplit = root.split('/');
+            rootSplit.splice(rootSplit.length - 1, 1, rootSplit[rootSplit.length - 1] + '_2.0');
+            var projectRoot = rootSplit.join('/');
             if(_exists(xmlpath)){
                 xmlreader.read(fis.util.read(xmlpath), function(errors, res){
                     if(null !== errors ){
@@ -80,6 +83,7 @@ exports.register = function(commander) {
                 if(model == 1){
                     filepath = root + '/' + namespace + '_2' +filepath.replace(root, '');
                 }
+                filepath = filepath.replace(root, projectRoot);
                 fis.util.write(filepath, content);
 
                 if(/\.tpl$/.test(filepath) && util.detWidgetExtends(content, ld, rd)){
@@ -96,10 +100,10 @@ exports.register = function(commander) {
             var config = 'fis.config.merge({\n'
                 + '      namespace : \'' + namespace +'\',\n'
                 + '});';
-            var configPath = root + '/fis-conf.js';
+            var configPath = projectRoot + '/fis-conf.js';
             fis.util.write(configPath, config);
             if(macro.length >0 && widget.length > 0){
-                fis.util.write(root + '/detect.html', createHTML(macro, widget,jsContext));
+                fis.util.write(projectRoot + '/detect.html', createHTML(macro, widget,jsContext));
             }
         });
 };
