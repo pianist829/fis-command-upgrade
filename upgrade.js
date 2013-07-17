@@ -71,26 +71,31 @@ exports.register = function(commander) {
             var macro = new Array();
             var widget = new Array();
             var jsContext = new Array();
-            fis.util.find(root, /.*\.(tpl|js|html|css)$/).forEach(function(filepath) {
-                var content = fis.util.read(filepath);
-                content = js.update(content, namespace,filepath, root);
-                filepath = filepath.replace(/[\/\\]+/g, '/');
-                content = css.update(content, namespace, filepath, root);
-                if(/\.tpl$/.test(filepath)){
-                    content = tpl.update(content, namespace, ld, rd, filepath, root, widgetInline);
+            fis.util.find(root).forEach(function(filepath) {
+                if(fis.util.isImageFile(filepath)) {
+                    fis.util.copy(filepath, projectRoot + '/' + util.getStandardPath(filepath.replace(root + '/', ''), namespace));
                 }
-                filepath = projectRoot + '/' + util.getStandardPath(filepath.replace(root + '/', ''), namespace);
-                fis.util.write(filepath, content);
+                if(/.*\.(tpl|js|html|css)$/.test(filepath)){
+                    var content = fis.util.read(filepath);
+                    content = js.update(content, namespace,filepath, root);
+                    filepath = filepath.replace(/[\/\\]+/g, '/');
+                    content = css.update(content, namespace, filepath, root);
+                    if(/\.tpl$/.test(filepath)){
+                        content = tpl.update(content, namespace, ld, rd, filepath, root, widgetInline);
+                    }
+                    filepath = projectRoot + '/' + util.getStandardPath(filepath.replace(root + '/', ''), namespace);
+                    fis.util.write(filepath, content);
 
-                if(/\.tpl$/.test(filepath) && util.detWidgetExtends(content, ld, rd)){
-                    widget.push(filepath);
-                }
-                if(/\.css$/.test(filepath) && util.detMarco(content)){
-                    fs.renameSync(filepath, filepath.replace(/\.css/, '.less'));
-                    macro.push(filepath);
-                }
-                if(util.detContext(content)){
-                    jsContext.push(filepath);
+                    if(/\.tpl$/.test(filepath) && util.detWidgetExtends(content, ld, rd)){
+                        widget.push(filepath);
+                    }
+                    if(/\.css$/.test(filepath) && util.detMarco(content)){
+                        fs.renameSync(filepath, filepath.replace(/\.css/, '.less'));
+                        macro.push(filepath);
+                    }
+                    if(util.detContext(content)){
+                        jsContext.push(filepath);
+                    }
                 }
             });
             if(fis.util.isDir(root + "/test")){
