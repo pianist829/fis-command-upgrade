@@ -25,7 +25,6 @@ exports.register = function(commander) {
         .option('--namespace <namespace>', 'namespace', String, 'common')
         .option('--ld <smarty left delimiter>', 'smarty left delimiter', String, '{%')
         .option('--rd <smarty right delimiter>', 'smarty right delimiter', String, '%}')
-        .option('--model <Upgrade model>', 'Upgrade model', String, '0')
         .action(function(options) {
             namespace = options.namespace;
             model = options.model;
@@ -94,18 +93,22 @@ exports.register = function(commander) {
                     jsContext.push(filepath);
                 }
             });
-            fis.util.find(root + "/test").forEach(function(filepath) {
-                var content = fis.util.read(filepath);
-                filepath = filepath.replace(/[\/\\]+/g, '/');
-                filepath = projectRoot + '/test/' + util.getStandardPath(filepath.replace(root + '/test/', ''), namespace);
-                fis.util.write(filepath, content);
-            });
-            fis.util.find(root + "/plugin").forEach(function(filepath) {
-                var content = fis.util.read(filepath);
-                filepath = filepath.replace(/[\/\\]+/g, '/');
-                filepath = filepath.replace(root, projectRoot);
-                fis.util.write(filepath, content);
-            });
+            if(fis.util.isDir(root + "/test")){
+                fis.util.find(root + "/test").forEach(function(filepath) {
+                    var content = fis.util.read(filepath);
+                    filepath = filepath.replace(/[\/\\]+/g, '/');
+                    filepath = projectRoot + '/test/' + util.getStandardPath(filepath.replace(root + '/test/', ''), namespace);
+                    fis.util.write(filepath, content);
+                });
+            }
+            if(fis.util.isDir(root + "/plugin")){
+                fis.util.find(root + "/plugin").forEach(function(filepath) {
+                    var content = fis.util.read(filepath);
+                    filepath = filepath.replace(/[\/\\]+/g, '/');
+                    filepath = filepath.replace(root, projectRoot);
+                    fis.util.write(filepath, content);
+                });
+            }
             fis.util.find(root + "/config", /.*\.(conf)$/).forEach(function(filepath) {
                 var content = fis.util.read(filepath);
                 filepath = filepath.replace(/[\/\\]+/g, '/');
