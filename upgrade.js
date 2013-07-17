@@ -80,10 +80,7 @@ exports.register = function(commander) {
                 if(/\.tpl$/.test(filepath)){
                     content = tpl.update(content, namespace, ld, rd, filepath, root, widgetInline);
                 }
-                if(model == 1){
-                    filepath = root + '/' + namespace + '_2' +filepath.replace(root, '');
-                }
-                filepath = filepath.replace(root, projectRoot);
+                filepath = projectRoot + '/' + util.getStandardPath(filepath.replace(root + '/', ''), namespace);
                 fis.util.write(filepath, content);
 
                 if(/\.tpl$/.test(filepath) && util.detWidgetExtends(content, ld, rd)){
@@ -96,6 +93,24 @@ exports.register = function(commander) {
                 if(util.detContext(content)){
                     jsContext.push(filepath);
                 }
+            });
+            fis.util.find(root + "/test").forEach(function(filepath) {
+                var content = fis.util.read(filepath);
+                filepath = filepath.replace(/[\/\\]+/g, '/');
+                filepath = projectRoot + '/test/' + util.getStandardPath(filepath.replace(root + '/test/', ''), namespace);
+                fis.util.write(filepath, content);
+            });
+            fis.util.find(root + "/plugin").forEach(function(filepath) {
+                var content = fis.util.read(filepath);
+                filepath = filepath.replace(/[\/\\]+/g, '/');
+                filepath = filepath.replace(root, projectRoot);
+                fis.util.write(filepath, content);
+            });
+            fis.util.find(root + "/config", /.*\.(conf)$/).forEach(function(filepath) {
+                var content = fis.util.read(filepath);
+                filepath = filepath.replace(/[\/\\]+/g, '/');
+                filepath = projectRoot + '/' + util.getStandardPath(filepath.replace(root + '/', ''), namespace);
+                fis.util.write(filepath, content);
             });
             var config = 'fis.config.merge({\n'
                 + '      namespace : \'' + namespace +'\',\n'
